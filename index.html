@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PIC DITOR</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+}
+
+.box {
+    width: 500px;
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+input, textarea, button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+button {
+    background: #6366f1;
+    color: white;
+    cursor: pointer;
+}
+
+#resultBox {
+    margin-top: 15px;
+    background: #0b1220;
+    padding: 10px;
+    border-radius: 10px;
+    min-height: 250px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+}
+
+img {
+    max-width: 100%;
+    border-radius: 10px;
+}
+
+#status {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #38bdf8;
+}
+
+pre {
+    white-space: pre-wrap;
+    font-size: 12px;
+    color: #f8fafc;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>PIC DITOR</h2>
+
+<input type="file" id="file" accept="image/*">
+
+<textarea id="prompt" placeholder="Write edit instruction..."></textarea>
+
+<button onclick="processImage()">Generate</button>
+
+<div id="status"></div>
+
+<div id="resultBox">
+    <span>Output will appear here</span>
+</div>
+</div>
+
+<script>
+async function processImage() {
+
+    const file = document.getElementById("file").files[0];
+    const prompt = document.getElementById("prompt").value;
+    const box = document.getElementById("resultBox");
+    const status = document.getElementById("status");
+
+    if (!file) {
+        alert("Please upload an image");
+        return;
+    }
+
+    status.innerText = "Processing...";
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("prompt", prompt);
+
+    try {
+        const res = await fetch("http://127.0.0.1:8000/edit-image", {
+            method: "POST",
+            body: formData
+        });
+
+        const text = await res.text();
+
+        console.log("RAW RESPONSE:", text);
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            box.innerHTML = "<pre>Invalid JSON:\n" + text + "</pre>";
+            status.innerText = "Error ❌";
+            return;
+        }
+
+        console.log("PARSED DATA:", data);
+
+        // RESET BOX
+        box.innerHTML = "";
+
+        // SHOW DEBUG JSON FIRST
+        const debug = document.createElement("pre");
+        debug.innerText = JSON.stringify(data, null, 2);
+        box.appendChild(debug);
+
+        // SHOW IMAGE IF EXISTS
+        if (data.image) {
+
+            const img = document.createElement("img");
+            img.src = "data:image/png;base64," + data.image;
+
+            img.onload = () => {
+                console.log("Image rendered successfully");
+            };
+
+            img.onerror = () => {
+                console.log("Image failed to render");
+            };
+
+            box.appendChild(img);
+
+            status.innerText = "Done ✔";
+
+        } else {
+            status.innerText = "No image returned ❌";
+        }
+
+    } catch (err) {
+        console.log(err);
+        box.innerHTML = "Network error: " + err;
+        status.innerText = "Failed ❌";
+    }
+}
+</script>
+
+</body>
+</html>
