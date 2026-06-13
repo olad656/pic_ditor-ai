@@ -5,9 +5,9 @@ DB = "memory.db"
 
 def init_db():
     conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    c = conn.cursor()
 
-    cur.execute("""
+    c.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
@@ -15,15 +15,14 @@ def init_db():
     )
     """)
 
-    cur.execute("""
+    c.execute("""
     CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         role TEXT,
-        message TEXT,
+        prompt TEXT,
         image_path TEXT,
-        output_path TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        output_path TEXT
     )
     """)
 
@@ -31,56 +30,44 @@ def init_db():
     conn.close()
 
 
-# ---------------- USERS ----------------
 def create_user(username, password):
     conn = sqlite3.connect(DB)
-    cur = conn.cursor()
-
-    cur.execute(
-        "INSERT INTO users (username, password) VALUES (?, ?)",
-        (username, password)
-    )
-
+    c = conn.cursor()
+    c.execute("INSERT INTO users (username, password) VALUES (?,?)",
+              (username, password))
     conn.commit()
     conn.close()
 
 
 def get_user(username):
     conn = sqlite3.connect(DB)
-    cur = conn.cursor()
-
-    cur.execute("SELECT * FROM users WHERE username=?", (username,))
-    user = cur.fetchone()
-
+    c = conn.cursor()
+    c.execute("SELECT * FROM users WHERE username=?", (username,))
+    user = c.fetchone()
     conn.close()
     return user
 
 
-# ---------------- CHAT ----------------
-def save_message(user_id, role, message, image_path=None, output_path=None):
+def save_message(user_id, role, prompt, image_path=None, output_path=None):
     conn = sqlite3.connect(DB)
-    cur = conn.cursor()
-
-    cur.execute("""
-    INSERT INTO messages (user_id, role, message, image_path, output_path)
-    VALUES (?, ?, ?, ?, ?)
-    """, (user_id, role, message, image_path, output_path))
-
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO messages (user_id, role, prompt, image_path, output_path)
+        VALUES (?,?,?,?,?)
+    """, (user_id, role, prompt, image_path, output_path))
     conn.commit()
     conn.close()
 
 
-def get_chat(user_id):
+def get_messages(user_id):
     conn = sqlite3.connect(DB)
-    cur = conn.cursor()
-
-    cur.execute("""
-    SELECT role, message, image_path, output_path
-    FROM messages
-    WHERE user_id=?
-    ORDER BY id ASC
+    c = conn.cursor()
+    c.execute("""
+        SELECT role, prompt, image_path, output_path
+        FROM messages
+        WHERE user_id=?
+        ORDER BY id ASC
     """, (user_id,))
-
-    data = cur.fetchall()
+    data = c.fetchall()
     conn.close()
     return data

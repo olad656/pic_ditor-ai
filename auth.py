@@ -1,28 +1,39 @@
-from datetime import datetime, timedelta
-from jose import jwt
-from passlib.context import CryptContext
+import jwt
+import hashlib
+import datetime
+from fastapi import Header, HTTPException
 
-SECRET_KEY = "CHANGE_THIS_TO_SOMETHING_RANDOM_SECURE"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET = "supersecretkey"
 
 
-def hash_password(password: str):
-    return pwd_context.hash(password)
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
-def verify_password(password: str, hashed: str):
-    return pwd_context.verify(password, hashed)
+def verify_password(password, hashed):
+    return hash_password(password) == hashed
 
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+def create_token(user_id):
+    payload = {
+        "user_id": user_id,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(days=7)
+    }
+    return jwt.encode(payload, SECRET, algorithm="HS256")
 
 
-def decode_token(token: str):
-    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+def decode_token(token):
+    return jwt.decode(token, SECRET, algorithms=["HS256"])
+
+
+def get_current_user(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    try:
+        token = authorization.split(" ")[1]
+        data = decode_token(token)
+        return data["user_id"]
+
+    except:
+        raise HTTPException(status_code=401, detail="Invalid token")

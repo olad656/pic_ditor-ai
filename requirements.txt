@@ -1,9 +1,10 @@
 fastapi
 uvicorn
 python-multipart
-opencv-python
-numpy
-pillow
-pytesseract
 python-dotenv
 google-genai
+pillow
+numpy
+opencv-python
+rembg
+onnxruntime

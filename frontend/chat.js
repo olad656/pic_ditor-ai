@@ -1,150 +1,61 @@
-let token = localStorage.getItem("token");
+const chatBox = document.getElementById("chatBox");
 
-const chat = document.getElementById("chat");
+async function sendMessage() {
 
+    const file = document.getElementById("fileInput").files[0];
+    const prompt = document.getElementById("prompt").value;
 
-// ---------------- UI ----------------
-function addMessage(role, text, image = null) {
-    const div = document.createElement("div");
-    div.classList.add("msg", role);
+    if (!file) return alert("Upload image first");
 
-    div.innerHTML = `
-        <div class="bubble">
-            <b>${role}</b><br>
-            ${text || ""}
-            ${image ? `<br><img src="${image}">` : ""}
-        </div>
-    `;
+    addMsg("user", prompt, URL.createObjectURL(file));
 
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-}
-
-
-// ---------------- LOADER ----------------
-function showLoader() {
-    document.getElementById("loader").style.display = "flex";
-}
-
-function hideLoader() {
-    document.getElementById("loader").style.display = "none";
-}
-
-
-// animated dots
-setInterval(() => {
-    const el = document.getElementById("dots");
-    if (!el) return;
-
-    let count = Math.floor(Date.now() / 500) % 4;
-    el.innerText = "Generating" + ".".repeat(count);
-}, 500);
-
-
-// ---------------- LOGIN ----------------
-async function login() {
-
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+    showTyping();
 
     const form = new FormData();
-    form.append("username", username);
-    form.append("password", password);
+    form.append("image", file);
+    form.append("prompt", prompt);
 
-    const res = await fetch("http://127.0.0.1:8000/login", {
+    const res = await fetch("/edit-image", {
         method: "POST",
         body: form
     });
 
     const data = await res.json();
 
-    if (data.access_token) {
-        token = data.access_token;
-        localStorage.setItem("token", token);
-        alert("Login successful");
-        loadHistory();
-    } else {
-        alert("Login failed");
-    }
-}
+    hideTyping();
 
-
-// ---------------- SEND IMAGE ----------------
-async function send() {
-
-    const file = document.getElementById("file").files[0];
-    const prompt = document.getElementById("prompt").value;
-
-    if (!file || !prompt) {
-        alert("Upload image + prompt");
-        return;
+    if (data.status === "success") {
+        addMsg("ai", "Result", null, "/" + data.result);
     }
 
-    addMessage("user", prompt, URL.createObjectURL(file));
-
-    const form = new FormData();
-    form.append("image", file);
-    form.append("prompt", prompt);
-
-    showLoader();
-
-    try {
-        const res = await fetch("http://127.0.0.1:8000/edit-image", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + token
-            },
-            body: form
-        });
-
-        const data = await res.json();
-
-        if (data.status === "success") {
-            addMessage(
-                "ai",
-                "Done",
-                "http://127.0.0.1:8000" + data.image
-            );
-        } else {
-            addMessage("ai", "Error processing image");
-        }
-
-    } catch (err) {
-        addMessage("ai", "Server error");
-    }
-
-    hideLoader();
 }
 
+function addMsg(role, text, img = null, result = null) {
 
-// ---------------- LOAD HISTORY ----------------
-async function loadHistory() {
+    const div = document.createElement("div");
+    div.className = role === "user" ? "msg user" : "msg ai";
 
-    const res = await fetch("http://127.0.0.1:8000/chat-history", {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
-    });
+    let html = "";
 
-    const data = await res.json();
+    if (text) html += `<p>${text}</p>`;
+    if (img) html += `<img src="${img}">`;
+    if (result) html += `<img src="${result}">`;
 
-    if (!data.history) return;
+    div.innerHTML = html;
+    chatBox.appendChild(div);
 
-    data.history.forEach(item => {
-        const [role, msg, img, out] = item;
-
-        const image = role === "user" ? img : out;
-
-        addMessage(
-            role,
-            msg,
-            image ? "http://127.0.0.1:8000/" + image : null
-        );
-    });
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+function showTyping() {
+    const div = document.createElement("div");
+    div.id = "typing";
+    div.className = "msg ai";
+    div.innerHTML = "AI is processing...";
+    chatBox.appendChild(div);
+}
 
-// auto-load if token exists
-if (token) {
-    loadHistory();
+function hideTyping() {
+    const t = document.getElementById("typing");
+    if (t) t.remove();
 }

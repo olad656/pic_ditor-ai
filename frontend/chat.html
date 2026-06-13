@@ -1,119 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>PIC DITOR AI</title>
-
-<style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-}
-
-.container {
-    max-width: 800px;
-    margin: auto;
-    padding: 20px;
-}
-
-.chat {
-    height: 75vh;
-    overflow-y: auto;
-    border: 1px solid #334155;
-    padding: 10px;
-    border-radius: 10px;
-    background: #111827;
-}
-
-.msg {
-    margin: 10px 0;
-}
-
-.user {
-    text-align: right;
-}
-
-.ai {
-    text-align: left;
-}
-
-.bubble {
-    display: inline-block;
-    padding: 10px;
-    border-radius: 10px;
-    max-width: 70%;
-}
-
-.user .bubble {
-    background: #2563eb;
-}
-
-.ai .bubble {
-    background: #374151;
-}
-
-img {
-    max-width: 250px;
-    margin-top: 5px;
-    border-radius: 10px;
-}
-
-.input-area {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-input[type="text"] {
-    flex: 1;
-    padding: 10px;
-}
-
-button {
-    padding: 10px 15px;
-    cursor: pointer;
-}
-
-/* LOADER */
-#loader {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    z-index: 9999;
-    color: white;
-    font-size: 20px;
-}
-</style>
+    <title>AI Image Editor</title>
+    <link rel="stylesheet" href="/frontend/style.css">
 </head>
 
 <body>
 
-<div class="container">
+<div id="chatBox"></div>
 
-    <h2>PIC DITOR AI CHAT</h2>
+<div class="inputBar">
+    <input type="file" id="fileInput" hidden>
+    <button onclick="document.getElementById('fileInput').click()">+</button>
 
-    <div id="chat" class="chat"></div>
-
-    <div class="input-area">
-        <input type="file" id="file">
-        <input type="text" id="prompt" placeholder="Enter prompt...">
-        <button onclick="send()">Send</button>
-    </div>
-
-</div>
-
-<!-- LOADING OVERLAY -->
-<div id="loader">
-    <div id="dots">Generating</div>
+    <input id="prompt" placeholder="Describe edit...">
+    <button onclick="sendMessage()">Send</button>
 </div>
 
 <script src="/frontend/chat.js"></script>
-
 </body>
 </html>
